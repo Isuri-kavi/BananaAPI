@@ -2,34 +2,54 @@
 const express = require('express');
 const dotenv = require('dotenv');  // Import dotenv to load .env variables
 const cors = require('cors');      // Import CORS to handle cross-origin requests
-const bodyParser = require('body-parser');  // Import bodyParser for parsing request bodies
 const cookieParser = require('cookie-parser');  // Import cookieParser for handling cookies
 const mongoose = require('mongoose');  // Import mongoose for MongoDB connection
 const axios = require('axios');  // Import axios to make requests to the Banana API
 
+<<<<<<< HEAD
 // Import routes for todos, authentication, and game
 const todoRoutes = require('./routes/todoRoutes'); 
 const authRoutes = require('./routes/authRoutes');
 const gameRoutes = require('./routes/gameRoutes');  // Import game routes
+=======
+// Import routes for todos, authentication, and game logic
+const todoRoutes = require('./routes/todoRoutes');
+const authRoutes = require('./routes/authRoutes');
+const gameRoutes = require('./routes/gameRoutes'); // Import game routes
+>>>>>>> 87348ee (leaderboard added game added)
 
 // Initialize dotenv to load environment variables from the .env file
-require('dotenv').config();
-console.log('Current working directory:', process.cwd()); // Check the current working directory
+dotenv.config();
+
+// Debugging log (to check if the environment variables are loaded)
+console.log('Current working directory:', process.cwd());  // Check the current working directory
 console.log('Mongo URI:', process.env.MONGO_URI); // Log the Mongo URI to check if it’s loaded correctly
+
+// Check if necessary environment variables are set
+if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
+  console.error('MONGO_URI or JWT_SECRET is not defined in the .env file!');
+  process.exit(1);  // Exit process if MONGO_URI or JWT_SECRET is not defined
+}
 
 // Initialize Express application
 const app = express();
 
 // Middleware setup
 app.use(cors());  // Allow cross-origin requests
-app.use(bodyParser.json());  // Parse JSON request bodies
+app.use(express.json());  // Parse JSON request bodies (replacing bodyParser)
 app.use(cookieParser());  // Parse cookies in requests
+
+// Serve static files from the 'frontend' directory
+app.use(express.static('frontend'));
 
 // MongoDB connection setup
 const connectDB = async () => {
   try {
-    // Connect to MongoDB using the URI from the .env file without deprecated options
-    await mongoose.connect(process.env.MONGO_URI);
+    // Connect to MongoDB using the URI from the .env file
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log('MongoDB connected');
   } catch (err) {
     console.error('Error connecting to MongoDB:', err.message);
@@ -42,7 +62,13 @@ connectDB();
 
 // Basic route to check server status
 app.get('/', (req, res) => {
-  res.send('Hello, Todo App!');  // Simple response to confirm server is running
+  res.send('Hello, Game App!');  // Simple response to confirm server is running
+});
+
+// Log when the game route is accessed for debugging
+app.use('/api/game', (req, res, next) => {
+  console.log('Game API accessed'); // Debugging log to confirm the route is being hit
+  next(); // Pass control to the next handler
 });
 
 // Use todoRoutes for all '/api/todos' routes
@@ -51,6 +77,7 @@ app.use('/api/todos', todoRoutes);
 // Use authRoutes for all '/api/auth' routes
 app.use('/api/auth', authRoutes);
 
+<<<<<<< HEAD
 // Use gameRoutes for all '/api/game' routes (new game route)
 app.use('/api/game', gameRoutes);
 
@@ -72,6 +99,20 @@ app.get('/test-banana', async (req, res) => {
   } else {
     res.status(500).send("Failed to retrieve data from the Banana API");
   }
+=======
+// Use gameRoutes for all '/api/game' routes
+app.use('/api/game', gameRoutes); // Handle game-related routes
+
+// Handle undefined routes (404 errors)
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+// Global error handling middleware (for uncaught errors)
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err.message);
+  res.status(500).json({ message: "Internal server error" });
+>>>>>>> 87348ee (leaderboard added game added)
 });
 
 // Start the server on the port specified in the .env file or fallback to 5000
